@@ -9,18 +9,18 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('fl_qbjs_parser');
+        $treeBuilder = new TreeBuilder('fl_qbjs_parser');
+        $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
                 ->arrayNode('builders')
-                    ->prototype('array')->cannotBeEmpty()
+                    ->prototype('array')
                         ->children()
                             ->scalarNode('class')->isRequired()->cannotBeEmpty()->end()
                             ->scalarNode('human_readable_name')->isRequired()->cannotBeEmpty()->end()
                             ->arrayNode('filters')->isRequired()->cannotBeEmpty()
-                                ->prototype('array')->cannotBeEmpty()
+                                ->prototype('array')
                                     ->children()
                                         ->scalarNode('id')->isRequired()->cannotBeEmpty()->end()
                                         ->scalarNode('label')->isRequired()->cannotBeEmpty()->end()
@@ -33,7 +33,7 @@ class Configuration implements ConfigurationInterface
                                 ->end()
                             ->end()
                             ->arrayNode('result_columns')->isRequired()->cannotBeEmpty()
-                                ->prototype('array')->cannotBeEmpty()
+                                ->prototype('array')
                                     ->children()
                                         ->scalarNode('column_machine_name')->isRequired()->cannotBeEmpty()->end()
                                         ->scalarNode('column_human_readable_name')->isRequired()->cannotBeEmpty()->end()
@@ -44,7 +44,7 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->arrayNode('doctrine_classes_and_mappings')
-                    ->prototype('array')->cannotBeEmpty()
+                    ->prototype('array')
                         ->children()
                             ->scalarNode('class')->isRequired()->cannotBeEmpty()->end()
                             ->arrayNode('properties')->isRequired()->cannotBeEmpty()
