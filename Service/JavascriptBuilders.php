@@ -2,6 +2,7 @@
 
 namespace FL\QBJSParserBundle\Service;
 
+use Doctrine\ORM\EntityManagerInterface;
 use FL\QBJSParserBundle\Event\Filter\FilterSetEvent;
 use FL\QBJSParserBundle\Model\Builder\Builder;
 use FL\QBJSParserBundle\Model\Filter\FilterInput;
@@ -10,6 +11,7 @@ use FL\QBJSParserBundle\Model\Filter\FilterValueCollection;
 use FL\QBJSParserBundle\Model\Builder\ResultColumn;
 use FL\QBJSParserBundle\Util\Validator\BuildersToMappings;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 
 class JavascriptBuilders
 {
@@ -26,15 +28,31 @@ class JavascriptBuilders
     private $dispatcher;
 
     /**
+     * @var EntityManagerInterface
+     */
+    private $em;
+
+    /**
+     * @var PropertyAccessor
+     */
+    private $propertyAccessor;
+
+    /**
      * ParserQueryService constructor.
      *
      * @param array                    $buildersConfig
      * @param array                    $classesAndMappings
      * @param EventDispatcherInterface $dispatcher
+     * @param EntityManagerInterface   $dispatcher
      */
-    public function __construct(array $buildersConfig, array $classesAndMappings, EventDispatcherInterface $dispatcher)
+    public function __construct(array $buildersConfig, array $classesAndMappings,
+                                EventDispatcherInterface $dispatcher,
+                                EntityManagerInterface $em)
     {
         $this->dispatcher = $dispatcher; // important that this goes before it's being used later in the constructor
+        $this->em = $em; // important that this goes before it's being used later in the constructor
+        $this->propertyAccessor = PropertyAccess::createPropertyAccessor();
+        dump($classesAndMappings);
         BuildersToMappings::validate($buildersConfig, $classesAndMappings);
         foreach ($buildersConfig as $builderId => $config) {
             $config['id'] = strval($builderId); // necessary for jQuery Query Builder
@@ -42,6 +60,7 @@ class JavascriptBuilders
             $config['filters'] = $this->filtersOverrides($config['filters'], $builderId);
             $config['filters'] = $this->filtersBooleanOverride($config['filters']); // override all booleans to display the same!
             $config['filters'] = $this->filtersDateOverrides($config['filters']); // override all dates to display the same!
+            $config['filters'] = $this->filtersEntitiesOverrides($config['filters']); // override all Entities to display the same!
             $config['filters'] = $this->filtersOverrideValues($config['filters']); // override each filter's values
             $builder = new Builder();
             $builder
@@ -218,6 +237,45 @@ class JavascriptBuilders
                         'format' => 'HH:mm',
                     ];
 
+                    break;
+            }
+
+            $filters[$key] = $filter;
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param array $filters
+     *
+     * @return array
+     */
+    private function filtersEntitiesOverrides(array $filters): array
+    {
+        foreach ($filters as $key => $filter) {
+            $builderType = $filter['type'];
+
+            switch ($builderType) {
+                case 'integer':
+                    // Get Values in class
+                    $filter['input'] = 'select';
+                    if(sizeof($filter["entity"]) > 0) {
+                        $results = $this->em->getRepository($filter["entity"]["class"])->findAll();
+
+                        if($results) {
+                            $filter['colors'] = [
+                                1 => 'success',
+                                0 => 'danger',
+                            ];
+                            foreach ($results as $result) {
+                                $keyGetter = "get" . ucfirst($filter["entity"]["key"] . "()");
+                                $valGetter = "get" . ucfirst($filter["entity"]["value"] . "()");
+                                $filter['values'][$this->propertyAccessor->getValue($result, $filter["entity"]["key"])]
+                                    = $this->propertyAccessor->getValue($result, $filter["entity"]["value"]);
+                            }
+                        }
+                    }
                     break;
             }
 

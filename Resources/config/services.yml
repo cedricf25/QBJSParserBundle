@@ -11,4 +11,5 @@ services:
         arguments:
             - "%fl_qbjs_parser.builders%"
             - "%fl_qbjs_parser.doctrine_classes_and_mappings%"
-            - "@event_dispatcher" # needs symfony/http-kernel in composer.json
+            - "@event_dispatcher" # needs symfony/http-kernel in composer.json$
+            - "@doctrine.orm.entity_manager"

@@ -78,6 +78,15 @@ fl_qbjs_parser:
                     id: availability.startDate
                     label: 'Product Availability - Start Date'
                     type: datetime
+					
+                -
+                    id: product.category
+                    label: 'Cartegories'
+                    type: integer
+                        class: App\Entity\Category
+                        key: id
+                        value: catName
+						
     # these are used for service fl_qbjs_parser.json_query_parser.doctrine_orm_parser
     # if another orm is being used, omit this key
     doctrine_classes_and_mappings: 

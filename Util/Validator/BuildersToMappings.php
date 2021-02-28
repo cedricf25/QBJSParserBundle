@@ -42,6 +42,16 @@ abstract class BuildersToMappings
                         if (!array_key_exists($filter['id'], $mappingProperties)) {
                             throw new \InvalidArgumentException(sprintf('Builders Configuration: Invalid Mapping for filter with ID %s, in builder with ID %s ', $filter['id'], $builderId));
                         }
+                        if (array_key_exists('entity', $filter)) {
+                            foreach ($filter['entity'] as $key => $value) {
+                                if($key == "class") {
+                                    $filtersEntityClass = $value;
+                                    if (!class_exists($filtersEntityClass)) {
+                                        throw new \InvalidArgumentException(sprintf('Builders Configuration: %s is not a valid class in builder with ID %s ', $filter['entity'], $builderId));
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     foreach ($config['result_columns'] as $column) {
