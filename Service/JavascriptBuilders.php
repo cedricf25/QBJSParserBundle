@@ -52,7 +52,6 @@ class JavascriptBuilders
         $this->dispatcher = $dispatcher; // important that this goes before it's being used later in the constructor
         $this->em = $em; // important that this goes before it's being used later in the constructor
         $this->propertyAccessor = PropertyAccess::createPropertyAccessor();
-        dump($classesAndMappings);
         BuildersToMappings::validate($buildersConfig, $classesAndMappings);
         foreach ($buildersConfig as $builderId => $config) {
             $config['id'] = strval($builderId); // necessary for jQuery Query Builder
@@ -145,9 +144,11 @@ class JavascriptBuilders
             $filterValueCollection = new FilterValueCollection();
             $filterInput = new FilterInput(FilterInput::INPUT_TYPE_TEXT);
             $filterOperators = new FilterOperators();
+
             foreach ($filter['operators'] as $operator) {
                 $filterOperators->addOperator($operator);
             }
+
             //$this->dispatcher->dispatch(FilterSetEvent::EVENT_NAME, new FilterSetEvent($filterInput, $filterOperators, $filterValueCollection, $filterId, $builderId));
             $this->validateValueCollectionAgainstInput($filterValueCollection, $filterInput, $filterId, $builderId);
 
@@ -259,18 +260,21 @@ class JavascriptBuilders
             switch ($builderType) {
                 case 'integer':
                     // Get Values in class
-                    $filter['input'] = 'select';
                     if(sizeof($filter["entity"]) > 0) {
-                        $results = $this->em->getRepository($filter["entity"]["class"])->findAll();
+                        $filter['input'] = 'select';
+                        $filter['multiple'] = 'true';
+
+                        $qb = $this->em->createQueryBuilder();
+
+                        $qb->select('s');
+                        $qb->from($filter["entity"]["class"],'s');
+                        //$qb->groupBy('s.id');
+                        //$qb->setMaxResults(16384);
+
+                        $results = $qb->getQuery()->execute();
 
                         if($results) {
-                            $filter['colors'] = [
-                                1 => 'success',
-                                0 => 'danger',
-                            ];
                             foreach ($results as $result) {
-                                $keyGetter = "get" . ucfirst($filter["entity"]["key"] . "()");
-                                $valGetter = "get" . ucfirst($filter["entity"]["value"] . "()");
                                 $filter['values'][$this->propertyAccessor->getValue($result, $filter["entity"]["key"])]
                                     = $this->propertyAccessor->getValue($result, $filter["entity"]["value"]);
                             }
